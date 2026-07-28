@@ -57,7 +57,22 @@ type PendingInput = {
   filename: string;
   fileType: string;
   content?: string;
+  fileData?: string;
 };
+
+const BINARY_FILE_TYPES = new Set(["pdf", "docx", "ppt", "pptx"]);
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function UploadsPage() {
   const [state, setState] = useState<UploadState>("idle");
@@ -98,7 +113,6 @@ export default function UploadsPage() {
       setProgress(Math.round(((i + 1) / STAGES.length) * 100));
     }
 
-    setCardCount(20 + Math.floor(Math.random() * 10));
     setState("gen-menu");
   }, []);
 
@@ -125,18 +139,25 @@ export default function UploadsPage() {
       });
 
       setProgress(60);
-      await processUploadMutation.mutateAsync({
+      const processResult = await processUploadMutation.mutateAsync({
         uploadId: uploadResult.uploadId,
         userId,
         content: input.content,
+        fileData: input.fileData,
         fileType: input.fileType,
         outputs,
       });
 
       setProgress(100);
-      setCardCount(20);
+      setCardCount(processResult.conceptsCount ?? 0);
       setState("gen-menu");
-      toast.success("Your content is now ready in your feed and learning roadmap.");
+      if (processResult.warning) {
+        toast.warning(processResult.warning);
+      } else if (!processResult.conceptsCount) {
+        toast.warning("No concepts could be extracted from this content — try a longer or clearer source.");
+      } else {
+        toast.success("Your content is now ready in your feed and learning roadmap.");
+      }
     } catch (err: any) {
       setErrorMsg(err.message ?? "Processing failed.");
       setState("error");
@@ -152,15 +173,20 @@ export default function UploadsPage() {
       return;
     }
 
+    const fileType = normalizeFileType(file.name);
     let content = "";
-    if (file.type.startsWith("text/") || file.name.toLowerCase().endsWith(".md") || file.name.toLowerCase().endsWith(".txt")) {
+    let fileData: string | undefined;
+    if (BINARY_FILE_TYPES.has(fileType)) {
+      fileData = await fileToBase64(file);
+    } else if (file.type.startsWith("text/") || file.name.toLowerCase().endsWith(".md") || file.name.toLowerCase().endsWith(".txt")) {
       content = await file.text();
     }
 
     const input = {
       filename: file.name,
-      fileType: normalizeFileType(file.name),
+      fileType,
       content,
+      fileData,
     };
 
     setPendingInput(input);

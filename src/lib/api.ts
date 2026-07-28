@@ -170,6 +170,7 @@ export function useProcessUpload() {
       uploadId: string;
       userId: string;
       content?: string;
+      fileData?: string;
       fileType: string;
       outputs: string[];
     }) => {
