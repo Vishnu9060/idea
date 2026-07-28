@@ -431,6 +431,7 @@ export const MOCK_STREAK: StreakData = {
   lastActiveDate: new Date().toISOString(),
   dailyGoalMinutes: 30,
   minutesToday: 23,
+  dailyStats: [],
 };
 
 export const MOCK_DAILY_STATS: DailyStats[] = Array.from({ length: 30 }, (_, i) => ({

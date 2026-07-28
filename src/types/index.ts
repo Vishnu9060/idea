@@ -87,12 +87,15 @@ export interface ConceptMemory {
 }
 
 export interface MemoryReport {
-  strongConcepts: ConceptMemory[];
-  weakConcepts: ConceptMemory[];
-  forgottenConcepts: ConceptMemory[];
-  dueForReview: ConceptMemory[];
+  strong: ConceptMemory[];
+  medium: ConceptMemory[];
+  weak: ConceptMemory[];
+  forgotten: ConceptMemory[];
+  dueReview: ConceptMemory[];
   overallScore: number;
   topicsBreakdown: TopicBreakdown[];
+  streak: StreakData | null;
+  total: number;
 }
 
 export interface TopicBreakdown {
@@ -200,6 +203,7 @@ export interface StreakData {
   lastActiveDate: string;
   dailyGoalMinutes: number;
   minutesToday: number;
+  dailyStats: DailyStats[];
 }
 
 export interface DailyStats {
