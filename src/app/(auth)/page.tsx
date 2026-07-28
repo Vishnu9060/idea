@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 type Mode = "login" | "signup";
 
@@ -36,6 +37,7 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function AuthPage() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,6 +98,11 @@ export default function AuthPage() {
         setError("Login succeeded but session cookie not found. Try again or enable cookies in your browser.");
         return;
       }
+
+      // Sync the shared auth context before navigating — otherwise
+      // AuthProvider's route guard still sees a stale null user on the
+      // very first render of the dashboard route and bounces back here.
+      await refresh();
 
       if (mode === "signup") {
         setSuccess("Account created! Redirecting…");
