@@ -1,0 +1,13 @@
+{
+  "name": "KnowledgeScroll",
+  "short_name": "KnowledgeScroll",
+  "description": "AI-Powered Knowledge Learning Platform",
+  "start_url": "/feed",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f5c518",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
