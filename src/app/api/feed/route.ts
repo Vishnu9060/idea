@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
             .limit(Math.max(limit, 8))
             .lean()
         : [],
-      Card.find({ source: "upload" })
+      Card.find({ source: "upload", userId })
         .sort({ createdAt: -1 })
         .limit(limit)
         .lean(),

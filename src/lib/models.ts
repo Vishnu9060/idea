@@ -41,8 +41,6 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-UserSchema.index({ email: 1 });
-
 export const User: Model<IUser> =
   mongoose.models.User ?? mongoose.model<IUser>("User", UserSchema);
 
@@ -50,6 +48,7 @@ export const User: Model<IUser> =
 
 export interface ICard extends Document {
   source: "ai_feed" | "upload" | "mentor" | "trending";
+  userId?: mongoose.Types.ObjectId;
   uploadId?: mongoose.Types.ObjectId;
   title: string;
   topic: string;
@@ -74,6 +73,7 @@ export interface ICard extends Document {
 const CardSchema = new Schema<ICard>(
   {
     source:             { type: String, enum: ["ai_feed", "upload", "mentor", "trending"], required: true },
+    userId:             { type: Schema.Types.ObjectId, ref: "User", index: true },
     uploadId:           { type: Schema.Types.ObjectId, ref: "Upload" },
     title:              { type: String, required: true, maxlength: 200 },
     topic:              { type: String, required: true, index: true },
@@ -97,7 +97,6 @@ const CardSchema = new Schema<ICard>(
 );
 
 CardSchema.index({ topic: 1, difficulty: 1 });
-CardSchema.index({ tags: 1 });
 
 export const Card: Model<ICard> =
   mongoose.models.Card ?? mongoose.model<ICard>("Card", CardSchema);

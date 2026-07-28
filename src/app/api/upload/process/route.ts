@@ -261,6 +261,7 @@ export async function POST(req: NextRequest) {
     for (const c of concepts) {
       const card = await Card.create({
         source: "upload",
+        userId: new mongoose.Types.ObjectId(userId),
         uploadId: upload._id,
         title: c.concept,
         topic: c.topic,

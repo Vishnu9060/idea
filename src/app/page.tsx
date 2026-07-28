@@ -5,8 +5,8 @@ import AuthPage from "./(auth)/page";
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET ?? "dev-secret-change-in-production";
 
-export default function Home() {
-	const ck = cookies();
+export default async function Home() {
+	const ck = await cookies();
 
 	let token: string | undefined;
 	try {

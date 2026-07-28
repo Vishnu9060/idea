@@ -8,9 +8,14 @@ export async function GET(req: NextRequest) {
     await connectDB();
     const userId = new URL(req.url).searchParams.get("userId");
 
-    const roadmaps = await Roadmap.find({}).lean();
+    if (!userId) {
+      const roadmaps = await Roadmap.find({ isSystem: true }).lean();
+      return NextResponse.json({ roadmaps });
+    }
 
-    if (!userId) return NextResponse.json({ roadmaps });
+    const roadmaps = await Roadmap.find({
+      $or: [{ isSystem: true }, { createdBy: userId }],
+    }).lean();
 
     // Merge user progress into roadmap data
     const progressDocs = await UserRoadmapProgress.find({
