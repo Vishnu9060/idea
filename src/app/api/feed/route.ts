@@ -10,19 +10,24 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get("userId");
     const limit = parseInt(searchParams.get("limit") ?? "20");
 
+    const withId = (card: any) => ({ ...card, id: card._id.toString() });
+
     if (!userId) {
       // Return all cards sorted by upvotes if no user context
       const cards = await Card.find({})
         .sort({ upvotes: -1, createdAt: -1 })
         .limit(limit)
         .lean();
-      return NextResponse.json({ cards, total: cards.length });
+      return NextResponse.json({ cards: cards.map(withId), total: cards.length });
     }
 
     const memory = await UserMemory.find({ userId })
       .sort({ confidenceScore: 1 })
       .limit(50)
       .lean();
+
+    // Ascending by confidence — weakest/most-forgotten first.
+    const confidenceByCardId = new Map(memory.map((m) => [m.cardId.toString(), m.confidenceScore]));
 
     const weakCardIds = memory
       .filter((m) => m.strength === "weak" || m.strength === "forgotten")
@@ -38,6 +43,10 @@ export async function GET(req: NextRequest) {
         ? Card.find({
             _id: { $nin: seenCardIds },
             topic: { $in: topics },
+            // Upload-sourced cards belong to whoever uploaded them — only
+            // surface those for their owner. Non-upload cards (ai_feed,
+            // trending, mentor) have no userId and are intentionally shared.
+            $or: [{ source: { $ne: "upload" } }, { userId }],
           })
             .sort({ interviewRelevance: -1, createdAt: -1 })
             .limit(Math.max(limit, 8))
@@ -53,13 +62,26 @@ export async function GET(req: NextRequest) {
         .lean(),
     ]);
 
-    const merged = [...userCards, ...weakCards, ...unseenCards, ...uploadCards, ...trendingCards];
+    // MongoDB's $in doesn't preserve array order, so re-sort by actual
+    // confidence — weakest/most-forgotten genuinely goes first.
+    const weakCardsSorted = [...weakCards].sort((a, b) => {
+      const scoreA = confidenceByCardId.get(a._id.toString()) ?? 0;
+      const scoreB = confidenceByCardId.get(b._id.toString()) ?? 0;
+      return scoreA - scoreB;
+    });
+
+    // weakCards goes first so its priority actually survives the dedup below
+    // (dedup keeps the first occurrence of each card id).
+    const merged = [...weakCardsSorted, ...userCards, ...unseenCards, ...uploadCards, ...trendingCards];
     const uniqueCards = merged.filter((card, index, arr) => {
       const id = card._id.toString();
       return arr.findIndex((item) => item._id.toString() === id) === index;
     });
 
-    return NextResponse.json({ cards: uniqueCards.slice(0, limit), total: uniqueCards.length });
+    return NextResponse.json({
+      cards: uniqueCards.slice(0, limit).map(withId),
+      total: uniqueCards.length,
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

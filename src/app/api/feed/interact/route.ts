@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { CardInteraction, UserMemory } from "@/lib/models";
+import { recordActivity } from "@/lib/streak";
 
 const CONFIDENCE_DELTA: Record<string, number> = {
   known:      +10,
@@ -75,6 +76,8 @@ export async function POST(req: NextRequest) {
         reviewCount: 1,
       });
     }
+
+    await recordActivity(userId, { action, timeSpentSeconds: timeSpentSeconds ?? 0 });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

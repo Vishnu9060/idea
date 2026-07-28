@@ -9,10 +9,12 @@ export async function GET(req: NextRequest) {
     const userId = new URL(req.url).searchParams.get("userId");
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-    const [memory, streak] = await Promise.all([
+    const [memoryRaw, streak] = await Promise.all([
       UserMemory.find({ userId }).sort({ confidenceScore: 1 }).populate("cardId", "title topic subtopic").lean(),
       UserStreak.findOne({ userId }).lean(),
     ]);
+
+    const memory = memoryRaw.map((m) => ({ ...m, id: m._id.toString() }));
 
     const strong    = memory.filter((m) => m.strength === "strong");
     const medium    = memory.filter((m) => m.strength === "medium");

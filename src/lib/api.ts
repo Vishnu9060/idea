@@ -107,7 +107,7 @@ export function useMemory(userId: string | null) {
     queryKey: ["memory", userId],
     queryFn: async () => {
       const data = await fetchJSON(`/api/memory?userId=${userId}`);
-      return data as MemoryReport & { streak: any };
+      return data as MemoryReport;
     },
     enabled: !!userId,
     staleTime: 30_000,
